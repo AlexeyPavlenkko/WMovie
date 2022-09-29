@@ -22,8 +22,8 @@ class MainTabBarController: UITabBarController {
         vc1.title = "Coming"
         
         let vc3 = UINavigationController(rootViewController: SearchViewController())
-        vc3.tabBarItem = UITabBarItem(title: "Top Searches", image: UIImage(systemName: "magnifyingglass.circle"), selectedImage: UIImage(systemName: "magnifyingglass.circle.fill"))
-        vc3.title = "Top Searches"
+        vc3.tabBarItem = UITabBarItem(title: "Search", image: UIImage(systemName: "magnifyingglass.circle"), selectedImage: UIImage(systemName: "magnifyingglass.circle.fill"))
+        vc3.title = "Search"
         
         let vc4 = UINavigationController(rootViewController: DownloadsViewController())
         vc4.tabBarItem = UITabBarItem(title: "Downloads", image: UIImage(systemName: "arrow.down.circle"), selectedImage: UIImage(systemName: "arrow.down.circle.fill"))
