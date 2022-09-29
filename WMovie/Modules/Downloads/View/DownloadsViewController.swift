@@ -15,7 +15,7 @@ class DownloadsViewController: UIViewController {
         view.backgroundColor = .systemBackground
     }
     
-
+    var viewModel: Int!
    
 
 }

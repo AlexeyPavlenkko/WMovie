@@ -15,7 +15,7 @@ class UpcomingViewController: UIViewController {
         view.backgroundColor = .systemBackground
     }
     
-
+    var viewModel: Int!
     
 
 }
