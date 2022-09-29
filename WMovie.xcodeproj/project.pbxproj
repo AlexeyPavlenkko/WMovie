@@ -84,7 +84,7 @@
 			children = (
 				E80EEFA228E332B4002D1115 /* Managers */,
 				E80EEFA128E332AD002D1115 /* Resources */,
-				E87A09DE28E5B5EB00C19B7D /* Models */,
+				E87A09DE28E5B5EB00C19B7D /* Model */,
 				E80EEFA928E3357D002D1115 /* Modules */,
 				E80EEF8A28E32A72002D1115 /* Assets.xcassets */,
 				E80EEF8C28E32A72002D1115 /* LaunchScreen.storyboard */,
@@ -105,6 +105,7 @@
 		E80EEFA228E332B4002D1115 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				E87A09EA28E5EBB800C19B7D /* CoreData */,
 				E87A09E928E5E82A00C19B7D /* Router */,
 				E87A09E828E5E81F00C19B7D /* AssemblyModuleBuilder */,
 				E87A09E428E5D2C900C19B7D /* Cache */,
@@ -258,12 +259,12 @@
 			path = ViewModel;
 			sourceTree = "<group>";
 		};
-		E87A09DE28E5B5EB00C19B7D /* Models */ = {
+		E87A09DE28E5B5EB00C19B7D /* Model */ = {
 			isa = PBXGroup;
 			children = (
 				E87A09DF28E5B61900C19B7D /* Movie.swift */,
 			);
-			path = Models;
+			path = Model;
 			sourceTree = "<group>";
 		};
 		E87A09E328E5C09C00C19B7D /* Network */ = {
@@ -304,6 +305,13 @@
 			children = (
 			);
 			path = Router;
+			sourceTree = "<group>";
+		};
+		E87A09EA28E5EBB800C19B7D /* CoreData */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = CoreData;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
