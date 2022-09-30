@@ -14,6 +14,7 @@ protocol HomeViewModelProtocol: AnyObject {
     func getHeaderTitleForSection(at index: Int) -> String
     func getMovieForCell(at indexPath: IndexPath) -> Movie
     var allMoviesLoaded: (() -> Void)? { get set }
+    var loadingFailed: ((String) -> Void)? { get set }
 }
 
 class HomeViewModel: HomeViewModelProtocol {
@@ -22,24 +23,27 @@ class HomeViewModel: HomeViewModelProtocol {
     private enum Sections: String, CaseIterable {
         case mainHeader     = ""
         case trendingMovies = "Trending Movies"
-        case trendingTV     = "Trending TV"
-        case popular        = "Popular"
-        case upcomingMovies = "Upcoming Movies"
-        case topRated       = "Top Rated"
+        case trendingTV     = "Trending TV shows"
+        case popularMovies  = "Popular Movies"
+        case popularTV      = "Popular TV shows"
+        case topRatedMovies = "Top Rated Movies"
+        case topRatedTVs    = "Top Rated TV shows"
     }
     
     private let dispatchGroup = DispatchGroup()
     
     private var trendingMovies: [Movie] = []
-    private var popularMovies: [Movie] = []
     private var trendingTVs: [Movie] = []
-    private var upcomingMovies: [Movie] = []
+    private var popularMovies: [Movie] = []
+    private var popularTVs: [Movie] = []
     private var topRatedMovies: [Movie] = []
+    private var topRatedTVs: [Movie] = []
     
-    //private let router: Router
+    private var errorMessages = ""
     
     //MARK: - Public
     var allMoviesLoaded: (() -> Void)?
+    var loadingFailed: ((String) -> Void)?
     
     func viewDidLoaded() {
         CacheManager.shared.restoreCache()
@@ -51,19 +55,7 @@ class HomeViewModel: HomeViewModelProtocol {
                 self?.trendingMovies = movies
                 print("-----trendingMovies GOT")
             case .failure(let error):
-                print(error)
-            }
-            self?.dispatchGroup.leave()
-        }
-        
-        dispatchGroup.enter()
-        NetworkManager.shared.send(request: PopularMoviesRequest()) { [weak self] result in
-            switch result {
-            case .success(let movies):
-                self?.popularMovies = movies
-                print("-----popularMovies GOT")
-            case .failure(let error):
-                print(error)
+                self?.errorMessages += "\(error.localizedDescription), "
             }
             self?.dispatchGroup.leave()
         }
@@ -75,19 +67,31 @@ class HomeViewModel: HomeViewModelProtocol {
                 self?.trendingTVs = movies
                 print("-----trendingTVs GOT")
             case .failure(let error):
-                print(error)
+                self?.errorMessages += "\(error.localizedDescription), "
             }
             self?.dispatchGroup.leave()
         }
         
         dispatchGroup.enter()
-        NetworkManager.shared.send(request: UpcomingMoviesRequest()) { [weak self] result in
+        NetworkManager.shared.send(request: PopularMoviesRequest()) { [weak self] result in
             switch result {
             case .success(let movies):
-                self?.upcomingMovies = movies
-                print("-----upcomingMovies GOT")
+                self?.popularMovies = movies
+                print("-----popularMovies GOT")
             case .failure(let error):
-                print(error)
+                self?.errorMessages += "\(error.localizedDescription), "
+            }
+            self?.dispatchGroup.leave()
+        }
+        
+        dispatchGroup.enter()
+        NetworkManager.shared.send(request: PopularTVsRequest()) { [weak self] result in
+            switch result {
+            case .success(let movies):
+                self?.popularTVs = movies
+                print("-----popularTVs GOT")
+            case .failure(let error):
+                self?.errorMessages += "\(error.localizedDescription), "
             }
             self?.dispatchGroup.leave()
         }
@@ -99,14 +103,31 @@ class HomeViewModel: HomeViewModelProtocol {
                 self?.topRatedMovies = movies
                 print("-----topRatedMovies GOT")
             case .failure(let error):
-                print(error)
+                self?.errorMessages += "\(error.localizedDescription), "
+            }
+            self?.dispatchGroup.leave()
+        }
+        
+        dispatchGroup.enter()
+        NetworkManager.shared.send(request: TopRatedTVsRequest()) { [weak self] result in
+            switch result {
+            case .success(let movies):
+                self?.topRatedTVs = movies
+                print("-----topRatedMovies GOT")
+            case .failure(let error):
+                self?.errorMessages += "\(error.localizedDescription), "
             }
             self?.dispatchGroup.leave()
         }
         
         dispatchGroup.notify(queue: .main) { [weak self] in
             print("NOTIFY CALLED")
-            self?.allMoviesLoaded?()
+            guard let self = self else {return}
+            if self.errorMessages.isEmpty {
+                self.allMoviesLoaded?()
+            } else {
+                self.loadingFailed?(self.errorMessages)
+            }
         }
         
     }
@@ -120,10 +141,11 @@ class HomeViewModel: HomeViewModelProtocol {
         switch section {
         case .mainHeader:     return 1
         case .trendingMovies: return trendingMovies.count
-        case .popular:        return popularMovies.count
         case .trendingTV:     return trendingTVs.count
-        case .upcomingMovies: return upcomingMovies.count
-        case .topRated:       return topRatedMovies.count
+        case .popularMovies:  return popularMovies.count
+        case .popularTV:      return popularTVs.count
+        case .topRatedMovies: return topRatedMovies.count
+        case .topRatedTVs:    return topRatedTVs.count
         }
     }
     
@@ -134,25 +156,18 @@ class HomeViewModel: HomeViewModelProtocol {
     func getMovieForCell(at indexPath: IndexPath) -> Movie {
         let section = Sections.allCases[indexPath.section]
         switch section {
-        case .mainHeader:
-            if !trendingMovies.isEmpty {
-                return trendingMovies[0]
-            }
-            return Movie()
-        case .trendingMovies:
-            return trendingMovies[indexPath.row]
-        case .popular:
-            return popularMovies[indexPath.row]
-        case .trendingTV:
-            return trendingTVs[indexPath.row]
-        case .upcomingMovies:
-            return upcomingMovies[indexPath.row]
-        case .topRated:
-            return topRatedMovies[indexPath.row]
+        case .mainHeader:     return trendingMovies.isEmpty == false ? trendingMovies[0] : Movie()
+        case .trendingMovies: return trendingMovies[indexPath.row]
+        case .trendingTV:     return trendingTVs[indexPath.row]
+        case .popularMovies:  return popularMovies[indexPath.row]
+        case .popularTV:      return popularTVs[indexPath.row]
+        case .topRatedMovies: return topRatedMovies[indexPath.row]
+        case .topRatedTVs:    return topRatedTVs[indexPath.row]
         }
     }
     
     func didSelectMovie(at indexPath: IndexPath) {
+        //let movie = getMovieForCell(at: indexPath)
         
     }
 }
