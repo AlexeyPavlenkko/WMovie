@@ -18,8 +18,6 @@ class MainHeaderCollectionViewCell: UICollectionViewCell {
     //MARK: - Subviews
     private let posterImageView: UIImageView = {
         let imageV = UIImageView()
-        let image = UIImage(named: "JK")
-        imageV.image = image
         imageV.contentMode = .scaleAspectFill
         imageV.clipsToBounds = true
         imageV.translatesAutoresizingMaskIntoConstraints = false
@@ -129,11 +127,9 @@ class MainHeaderCollectionViewCell: UICollectionViewCell {
     
     public func setupMainHeader(with movie: Movie) {
         if let image = CacheManager.shared.getImage(for: movie.posterImage) {
-            print("___________USING CACHE_-_-_-_")
             posterImageView.image = image
         } else {
             NetworkManager.shared.getImageDataFrom(path: movie.posterImage) { [weak self] data in
-                print("_________MAKING IMAGE REQUEST")
                 guard let data = data else { return }
                 let image = UIImage(data: data)
                 DispatchQueue.main.async {
