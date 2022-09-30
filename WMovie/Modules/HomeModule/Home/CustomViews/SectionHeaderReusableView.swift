@@ -11,6 +11,7 @@ class SectionHeaderReusableView: UICollectionReusableView {
     static let identifier = "SectionHeaderReusableView"
     static let kind = "header"
     
+    //MARK: - Subviews
     private let headerTitleLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 20, weight: .semibold)
@@ -21,6 +22,7 @@ class SectionHeaderReusableView: UICollectionReusableView {
         return label
     }()
     
+    //MARK: - Lifecycle
     override init(frame: CGRect) {
         super.init(frame: frame)
         addSubview(headerTitleLabel)
@@ -36,6 +38,7 @@ class SectionHeaderReusableView: UICollectionReusableView {
         setupConstraints()
     }
     
+    //MARK: - Private methods
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             headerTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
@@ -45,9 +48,10 @@ class SectionHeaderReusableView: UICollectionReusableView {
         ])
     }
     
+    //MARK: - Public Methods
     public func setupHeaderTitle(with title: String) {
         headerTitleLabel.text = title
-        layoutIfNeeded()
+
     }
     
 }
