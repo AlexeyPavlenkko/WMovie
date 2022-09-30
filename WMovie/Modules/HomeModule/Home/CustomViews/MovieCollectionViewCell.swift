@@ -10,6 +10,7 @@ import UIKit
 class MovieCollectionViewCell: UICollectionViewCell {
     static let identifier = "MovieCollectionViewCell"
     
+    //MARK: - Subviews
     private let posterImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -19,6 +20,10 @@ class MovieCollectionViewCell: UICollectionViewCell {
         return imageView
     }()
     
+    //MARK: - Private variables
+    private var indexPath: IndexPath?
+    
+    //MARK: - Lifecycle
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupSubviews()
@@ -39,6 +44,7 @@ class MovieCollectionViewCell: UICollectionViewCell {
         posterImageView.image = nil
     }
     
+    //MARK: - Private methods
     private func setupSubviews() {
         addSubview(posterImageView)
     }
@@ -52,18 +58,19 @@ class MovieCollectionViewCell: UICollectionViewCell {
         ])
     }
     
+    //MARK: - Public methods
     public func setupCell(with movie: Movie, indexPath: IndexPath) {
+        self.indexPath = indexPath
         if let image = CacheManager.shared.getImage(for: movie.posterImage) {
-            print("___________USING CACHE_-_-_-_")
             posterImageView.image = image
         } else {
             NetworkManager.shared.getImageDataFrom(path: movie.posterImage) { [weak self] data in
-                print("_________MAKING IMAGE REQUEST")
                 guard let data = data else { return }
                 let image = UIImage(data: data)
                 DispatchQueue.main.async {
-                    self?.posterImageView.image = image
                     CacheManager.shared.cache(image: image, for: movie.posterImage)
+                    guard self?.indexPath == indexPath else { return }
+                    self?.posterImageView.image = image
                 }
             }
         }
