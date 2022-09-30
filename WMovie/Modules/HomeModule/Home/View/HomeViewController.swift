@@ -18,7 +18,7 @@ class HomeViewController: UIViewController {
 
     //MARK: - Variables
     public var viewModel: HomeViewModelProtocol = HomeViewModel()
-    
+    private var progressManager = ProgressManager()
     
     //MARK: - Lifecycle
     override func viewDidLoad() {
@@ -29,7 +29,7 @@ class HomeViewController: UIViewController {
         setupNavBar()
         setupViewModelCallBacks()
         viewModel.viewDidLoaded()
-        
+        progressManager.show(on: self)
     }
     
     override func viewDidLayoutSubviews() {
@@ -71,6 +71,12 @@ class HomeViewController: UIViewController {
         viewModel.allMoviesLoaded = { [weak self] in
             self?.collectionView.reloadData()
             print("RELOAD CALLED")
+            self?.progressManager.remove()
+        }
+        
+        viewModel.loadingFailed = { [weak self] errorMessage in
+            self?.showAlert(title: "Try Again Later...", message: errorMessage, dismissAction: nil)
+            self?.progressManager.remove()
         }
     }
     
