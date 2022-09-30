@@ -37,9 +37,7 @@ class NetworkManager {
     private init() {}
     
     //MARK: Constants
-    static let API_KEY = "87db726043635956ebb8cde640e28a2f"
-    static let baseURL = "https://api.themoviedb.org/3"
-    static let baseURLForImage = "https://image.tmdb.org/t/p/w300"
+    static let baseURLForImage = "https://image.tmdb.org/t/p/w500"
     
     //MARK: Request methods
     func send<Request: APIRequest>(request: Request ,completion: @escaping (Result<Request.Response, Error>) -> Void) {
