@@ -7,14 +7,13 @@
 
 import Foundation
 
-fileprivate struct APIConstants {
+struct APIConstants {
     static let API_KEY = "87db726043635956ebb8cde640e28a2f"
     static let baseURL = "https://api.themoviedb.org"
 }
 
 fileprivate struct APIRespone<T: Decodable>: Decodable {
     let results: T
-    
 }
 
 protocol APIRequest {
@@ -22,22 +21,38 @@ protocol APIRequest {
     
     var path: String { get }
     var queryItems: [URLQueryItem]? { get }
-    var requestURL: URL? { get }
+    var requestURL: URLRequest? { get }
+    var postData: Data? { get }
     func decode(from data: Data) throws -> Response
 }
 
 extension APIRequest {
-    var queryItems: [URLQueryItem]? { [URLQueryItem(name: "api_key", value: APIConstants.API_KEY)] }
+    var queryItems: [URLQueryItem]? { [URLQueryItem(name: "api_key", value: APIConstants.API_KEY), URLQueryItem(name: "page", value: "1")] }
 
-    var requestURL: URL? {
+    var postData: Data? { nil }
+    
+    var requestURL: URLRequest? {
         guard var components = URLComponents(string: APIConstants.baseURL) else { return nil }
         components.path = path
         components.queryItems = queryItems
-        return components.url
+        guard let url = components.url else { return nil }
+        var request = URLRequest(url: url)
+        
+        if let data = postData {
+            request.httpBody = data
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpMethod = "POST"
+        }
+        
+        return request
     }
     
     func decode(from data: Data) throws -> Response {
-        let decodedResponse = try JSONDecoder().decode(APIRespone<Response>.self, from: data)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let jsondecoder = JSONDecoder()
+        jsondecoder.dateDecodingStrategy = .formatted(dateFormatter)
+        let decodedResponse = try jsondecoder.decode(APIRespone<Response>.self, from: data)
         return decodedResponse.results
     }
 }
