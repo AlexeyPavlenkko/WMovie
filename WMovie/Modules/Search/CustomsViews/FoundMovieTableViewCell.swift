@@ -131,16 +131,28 @@ class FoundMovieTableViewCell: UITableViewCell {
         
         titleLabel.text = movie.title
         let yearFormatted = formatter.string(from: movie.year)
-        releaseLabel.text = "Release date: \(yearFormatted)"
-        overviewLabel.text = "Overview: \(movie.overview ?? "-")"
+        if yearFormatted == "01.01.9999" {
+            releaseLabel.text = "Release date is unknown"
+        } else {
+            releaseLabel.text = "Release date: \(yearFormatted)"
+        }
+        
+        let overviewText = movie.overview ?? ""
+        if overviewText.isEmpty {
+            overviewLabel.text = "Overview is not available"
+        } else {
+            overviewLabel.text = "Overview: \(overviewText)"
+        }
         
         if let image = CacheManager.shared.getImage(for: movie.posterImage) {
             print("Using cache")
             posterImageView.image = image
         } else {
             NetworkManager.shared.getImageDataFrom(path: movie.posterImage) { [weak self] data in
-                guard let data = data else { return }
-                let image = UIImage(data: data)
+                guard let data = data, let image = UIImage(data: data) else {
+                    self?.posterImageView.image = UIImage(named: "noPoster")
+                    return
+                }
                 DispatchQueue.main.async {
                     CacheManager.shared.cache(image: image, for: movie.posterImage)
                     guard self?.indexPath == indexPath else { return }

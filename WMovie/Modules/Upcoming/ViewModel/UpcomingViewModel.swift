@@ -11,7 +11,6 @@ protocol UpcomingViewModelProtocol {
     var moviesLoaded: (() -> Void)? { get set }
     var loadingFailed: ((String) -> Void)? { get set }
     func getNumberOfRows() -> Int
-    func didSelectMovie(at index: Int)
     func getMovieForCell(at index: Int) -> Movie
     func loadMoreMovies()
     
@@ -52,10 +51,4 @@ class UpcomingViewModel: UpcomingViewModelProtocol {
     func getMovieForCell(at index: Int) -> Movie {
         return upcomingMovies[index]
     }
-    
-    func didSelectMovie(at index: Int) {
-        let movie = upcomingMovies[index]
-        print(movie)
-    }
-    
 }

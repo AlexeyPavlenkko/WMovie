@@ -165,9 +165,4 @@ class HomeViewModel: HomeViewModelProtocol {
         case .topRatedTVs:    return topRatedTVs[indexPath.row]
         }
     }
-    
-    func didSelectMovie(at indexPath: IndexPath) {
-        //let movie = getMovieForCell(at: indexPath)
-        
-    }
 }

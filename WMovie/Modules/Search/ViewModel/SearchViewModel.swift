@@ -11,7 +11,6 @@ protocol SearchViewModelProtocol {
     func getSeachScopeTitles() -> [String]
     func searchWithQuery(_ query: String, forScopeAtIndex index: Int)
     func getMovieForCell(at index: Int) -> Movie
-    func didSelectMovie(at index: Int)
     func getNumberOfRows() -> Int
     var moviesFound: (() -> Void)? { get set }
     var noMoviesExist: (() -> Void)? { get set }
@@ -98,10 +97,5 @@ class SearchViewModel: SearchViewModelProtocol {
     
     func getMovieForCell(at index: Int) -> Movie {
         return movies[index]
-    }
-    
-    func didSelectMovie(at index: Int) {
-        let movie = movies[index]
-        print(movie)
     }
 }
