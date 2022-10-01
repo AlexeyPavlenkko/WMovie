@@ -125,14 +125,15 @@ extension HomeViewController: UICollectionViewDataSource, UICollectionViewDelega
         collectionView.deselectItem(at: indexPath, animated: true)
         guard indexPath.section != 0 else { return }
         let movie = viewModel.getMovieForCell(at: indexPath)
-        print(movie)
+        print("------MOVIE TITLE \(movie.title)")
+        self.showMovieDetailVC(with: movie)
     }
 }
 
 extension HomeViewController: MainHeaderDelegate {
     func playButtonDidTapped(_ cell: MainHeaderCollectionViewCell) {
         let movie = viewModel.getMovieForCell(at: IndexPath(item: 0, section: 0))
-        print("PLAY \(movie.title)")
+        self.showMovieDetailVC(with: movie)
     }
     
     func downloadButtonDidTapped(_ cell: MainHeaderCollectionViewCell) {

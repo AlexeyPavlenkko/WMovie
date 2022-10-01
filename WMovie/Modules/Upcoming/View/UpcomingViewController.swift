@@ -30,8 +30,6 @@ class UpcomingViewController: UIViewController {
         view.backgroundColor = .systemBackground
         setupTableView()
         setupViewModelCallBacks()
-        viewModel.loadMoreMovies()
-        
         progressManager.show(on: self)
     }
     
@@ -83,7 +81,9 @@ extension UpcomingViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        print(viewModel.getMovieForCell(at: indexPath.row))
+        let movie = viewModel.getMovieForCell(at: indexPath.row)
+        print(movie)
+        self.showMovieDetailVC(with: movie)
     }
     
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
@@ -94,16 +94,10 @@ extension UpcomingViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int) {
         guard let footer = view as? UpcomingFooterView else { return }
         footer.showIndicator()
+        viewModel.loadMoreMovies()
     }
     
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         return CGFloat(50)
-    }
-    
-    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        let numberOfRows = viewModel.getNumberOfRows()
-        if indexPath.row == numberOfRows - 1 {
-            viewModel.loadMoreMovies()
-        }
     }
 }

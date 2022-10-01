@@ -46,6 +46,7 @@ class SearchViewController: UIViewController {
     private func setupSearchController() {
         navigationItem.searchController = searchController
         navigationItem.searchController?.searchBar.placeholder = "Please enter movie's title"
+        navigationController?.navigationBar.tintColor = .label
         searchController.obscuresBackgroundDuringPresentation = false
         searchController.automaticallyShowsSearchResultsController = true
         searchController.searchBar.showsScopeBar = true
@@ -104,7 +105,8 @@ extension SearchViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        print(viewModel.getMovieForCell(at: indexPath.row))
+        let movie = viewModel.getMovieForCell(at: indexPath.row)
+        self.showMovieDetailVC(with: movie)
     }
 }
 
