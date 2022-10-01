@@ -36,8 +36,6 @@ class NetworkManager {
     static let shared = NetworkManager()
     private init() {}
     
-    //MARK: Constants
-    static let baseURLForImage = "https://image.tmdb.org/t/p/w500"
     
     //MARK: Request methods
     func send<Request: APIRequest>(request: Request ,completion: @escaping (Result<Request.Response, Error>) -> Void) {
@@ -74,7 +72,7 @@ class NetworkManager {
     }
     
     func getImageDataFrom(path: String?, completion: @escaping (Data?) -> Void) {
-        guard let path = path, let url = URL(string: NetworkManager.baseURLForImage + path) else {
+        guard let path = path, let url = URL(string: APIConstants.tmdbBaseURLForImage + path) else {
             completion(nil)
             return
         }
@@ -91,6 +89,3 @@ class NetworkManager {
     }
     
 }
-
-
-
