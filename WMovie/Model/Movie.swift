@@ -66,7 +66,7 @@ struct Movie: Decodable, CustomStringConvertible {
     }
     
     var description: String {
-        "Movie(title: \(title), releaseDate: \(year), overview: \(overview ?? "don't have overview") "
+        "Movie(title: \(title), releaseDate: \(year), overview: \(overview ?? "don't have overview"), posteImagePath: \(posterImage ?? "-") "
     }
 }
 
