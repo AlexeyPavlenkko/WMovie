@@ -7,11 +7,6 @@
 
 import Foundation
 
-struct APIConstants {
-    static let API_KEY = "87db726043635956ebb8cde640e28a2f"
-    static let baseURL = "https://api.themoviedb.org"
-}
-
 fileprivate struct APIRespone<T: Decodable>: Decodable {
     let results: T
 }
@@ -27,12 +22,12 @@ protocol APIRequest {
 }
 
 extension APIRequest {
-    var queryItems: [URLQueryItem]? { [URLQueryItem(name: "api_key", value: APIConstants.API_KEY), URLQueryItem(name: "page", value: "1")] }
+    var queryItems: [URLQueryItem]? { [URLQueryItem(name: "api_key", value: APIConstants.tmdbAPI_KEY), URLQueryItem(name: "page", value: "1")] }
 
     var postData: Data? { nil }
     
     var requestURL: URLRequest? {
-        guard var components = URLComponents(string: APIConstants.baseURL) else { return nil }
+        guard var components = URLComponents(string: APIConstants.tmdbBaseURL) else { return nil }
         components.path = path
         components.queryItems = queryItems
         guard let url = components.url else { return nil }
