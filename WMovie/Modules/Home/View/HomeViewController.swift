@@ -7,7 +7,7 @@
 
 import UIKit
 
-class HomeViewController: UIViewController {
+final class HomeViewController: UIViewController {
     
     //MARK: - Subviews
     private let collectionView: UICollectionView = {
@@ -17,8 +17,20 @@ class HomeViewController: UIViewController {
     }()
 
     //MARK: - Variables
-    public var viewModel: HomeViewModelProtocol = HomeViewModel()
     private var progressManager = ProgressManager()
+    private let viewModel: HomeViewModelProtocol
+    weak private var builder: ModuleBuilderProtocol?
+    
+    //MARK: - Init
+    init(viewModel: HomeViewModelProtocol, builder: ModuleBuilderProtocol) {
+        self.viewModel = viewModel
+        self.builder = builder
+        super.init(nibName: nil, bundle: .main)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     //MARK: - Lifecycle
     override func viewDidLoad() {
@@ -28,8 +40,13 @@ class HomeViewController: UIViewController {
         setupCollectionView()
         setupNavBar()
         setupViewModelCallBacks()
-        viewModel.viewDidLoaded()
         progressManager.show(on: self)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        viewModel.viewDidLoaded()
     }
     
     override func viewDidLayoutSubviews() {
@@ -39,8 +56,6 @@ class HomeViewController: UIViewController {
     }
     
     //MARK: - @objc methods
-    
-    
     
     //MARK: - Private Methods
     private func setupCollectionView() {
@@ -56,13 +71,7 @@ class HomeViewController: UIViewController {
     }
     
     private func setupNavBar() {
-        var image = UIImage(named: "movie")
-        image = image?.withRenderingMode(.alwaysOriginal)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(image: image, style: .done, target: self, action: nil)
-        navigationItem.rightBarButtonItems = [
-            UIBarButtonItem(image: UIImage(systemName: "person.fill"), style: .done, target: self, action: nil),
-            UIBarButtonItem(image: UIImage(systemName: "play.rectangle.fill"), style: .done, target: self, action: nil)
-        ]
+        navigationItem.title = "Home"
         navigationController?.navigationBar.tintColor = .label
         navigationController?.navigationBar.barTintColor = .systemBackground
     }
@@ -70,16 +79,17 @@ class HomeViewController: UIViewController {
     private func setupViewModelCallBacks() {
         viewModel.allMoviesLoaded = { [weak self] in
             self?.collectionView.reloadData()
-            print("RELOAD CALLED")
             self?.progressManager.remove()
         }
         
         viewModel.loadingFailed = { [weak self] errorMessage in
-            self?.showAlert(title: "Try Again Later...", message: errorMessage, dismissAction: nil)
+            self?.showAlert(title: "Error!", message: errorMessage, dismissAction: nil)
             self?.progressManager.remove()
         }
     }
     
+    //MARK: - Deinit
+    deinit { print("DEALLOCATION: \(Self.self)")}
 }
 
 //MARK: - CollectionDataSource & Delegate
@@ -125,20 +135,42 @@ extension HomeViewController: UICollectionViewDataSource, UICollectionViewDelega
         collectionView.deselectItem(at: indexPath, animated: true)
         guard indexPath.section != 0 else { return }
         let movie = viewModel.getMovieForCell(at: indexPath)
-        print("------MOVIE TITLE \(movie.title)")
-        self.showMovieDetailVC(with: movie)
+        guard let movieDetailVC = builder?.build(module: .movieDetail(movie: movie)) else { return }
+        present(movieDetailVC, animated: true)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath], point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let indexPath = indexPaths.first, indexPath != IndexPath(row: 0, section: 0) else { return nil }
+        let movie = viewModel.getMovieForCell(at: indexPath)
+        let isSavedAlready = viewModel.isMovieAlreadySavedCheck(movie)
+        
+        let config = UIContextMenuConfiguration(actionProvider:  { _ in
+            let saveAction = UIAction(title: isSavedAlready ? "Delete" : "Save") { (action) in
+                let messageReturned = self.viewModel.toggleStorageStatusFor(movie)
+                self.showAlertWithAutoDismiss(message: messageReturned)
+            }
+            return UIMenu(title: "", children: [saveAction])
+        })
+        return config
     }
 }
 
+//MARK: - MainHeaderDelegate
 extension HomeViewController: MainHeaderDelegate {
     func playButtonDidTapped(_ cell: MainHeaderCollectionViewCell) {
         let movie = viewModel.getMovieForCell(at: IndexPath(item: 0, section: 0))
-        self.showMovieDetailVC(with: movie)
+        guard let movieDetailVC = builder?.build(module: .movieDetail(movie: movie)) else { return }
+        present(movieDetailVC, animated: true)
     }
     
     func downloadButtonDidTapped(_ cell: MainHeaderCollectionViewCell) {
         let movie = viewModel.getMovieForCell(at: IndexPath(item: 0, section: 0))
-        print("DOWNLOAD \(movie.title)")
+        let isAlreadySaved = viewModel.isMovieAlreadySavedCheck(movie)
+        if isAlreadySaved {
+            showAlert(message: "Movie is already saved!")
+        } else {
+            let returnedMessage = viewModel.toggleStorageStatusFor(movie)
+            showAlertWithAutoDismiss(message: returnedMessage)
+        }
     }
 }
-
