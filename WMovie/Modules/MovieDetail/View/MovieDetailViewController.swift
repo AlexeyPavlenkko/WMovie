@@ -8,7 +8,7 @@
 import UIKit
 import WebKit
 
-class MovieDetailViewController: UIViewController {
+final class MovieDetailViewController: UIViewController {
     
     //MARK: - Subviews
     private let labelsStackView: UIStackView = {
@@ -95,27 +95,49 @@ class MovieDetailViewController: UIViewController {
     private let activityIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
         indicator.translatesAutoresizingMaskIntoConstraints = false
-        indicator.tintColor = .black
+        indicator.tintColor = .white
         indicator.hidesWhenStopped = true
         return indicator
     }()
     
-    //MARK: - Variables
-    private let formatter: DateFormatter = {
-        let frmt = DateFormatter()
-        frmt.dateFormat = "dd.MM.yyyy"
-        return frmt
+    private let placeHolderImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.backgroundColor = .darkGray
+        imageView.contentMode = .scaleAspectFill
+        imageView.layer.cornerRadius = 10
+        imageView.clipsToBounds = true
+        return imageView
     }()
-    private var videoID: String?
-    public var movie: Movie!
-
+    
+    private let blurView: UIVisualEffectView = {
+        let blur = UIBlurEffect(style: .prominent)
+        return UIVisualEffectView(effect: blur)
+    }()
+    
+    //MARK: - Variables
+    private let viewModel: MovieDetailViewModelProtocol
+    
+    //MARK: - Init
+    init(viewModel: MovieDetailViewModelProtocol) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: .main)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     //MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .clear
         setupSubviews()
-        sendYoutubeAPIRequest()
+        activityIndicator.startAnimating()
+        saveButton.isHidden = viewModel.isButtonAvailable()
+        updateButtonLabel()
+        setupViewModelCallBacks()
+        viewModel.sendYoutubeAPIRequest()
     }
     
     override func viewDidLayoutSubviews() {
@@ -126,44 +148,41 @@ class MovieDetailViewController: UIViewController {
     
     //MARK: - @objc methods
     @objc private func saveButtonDidTapped() {
-        print(#function)
+        let messaage = viewModel.toggleStorageStatusForMovie()
+        self.showAlertWithAutoDismiss(message: messaage)
+        updateButtonLabel()
     }
     
     //MARK: - Private methods
     private func setupSubviews() {
         labelsStackView.addArrangedSubview(titleLabel)
-        titleLabel.text = movie.title
+        titleLabel.text = viewModel.getMovieTitle()
         
         labelsStackView.addArrangedSubview(releaseDateLabel)
-        let yearFormatted = formatter.string(from: movie.year)
-        if yearFormatted == "01.01.9999" {
-            releaseDateLabel.text = "Release date is unknown"
-        } else {
-            releaseDateLabel.text = "Release date: \(yearFormatted)"
-        }
+        releaseDateLabel.text = viewModel.getMovieReleaseDate()
         
-        if let mediaType = movie.mediaType {
+        if let mediaType = viewModel.getMovieMediaType() {
             labelsStackView.addArrangedSubview(mediaTypeLabel)
-            mediaTypeLabel.text = "Media type: \(mediaType)"
+            mediaTypeLabel.text = mediaType
         }
         
-        if let rating = movie.rate {
-            labelsStackView.addArrangedSubview(rateLabel)
-            rateLabel.text = rating == 0.0 ? "Rating is not available yet" : "Rating: \(rating)"
-        }
+        labelsStackView.addArrangedSubview(rateLabel)
+        rateLabel.text = viewModel.getMovieRate()
         
         labelsStackView.addArrangedSubview(overviewLabel)
-        let overviewText = movie.overview ?? ""
-        if overviewText.isEmpty {
-            overviewLabel.text = "Overview is not available"
-        } else {
-            overviewLabel.text = "Overview: \(overviewText)"
-        }
+        overviewLabel.text = viewModel.getMovieOverview()
         
+        view.addSubview(blurView)
         view.addSubview(webView)
         view.addSubview(labelsStackView)
         view.addSubview(saveButton)
+        view.addSubview(placeHolderImageView)
         view.addSubview(activityIndicator)
+    }
+    
+    private func updateButtonLabel() {
+        let title = viewModel.isMovieAlreadySavedCheck() ? "Delete" : "Save"
+        saveButton.setTitle(title, for: .normal)
     }
     
     private func setupConstraints() {
@@ -172,11 +191,6 @@ class MovieDetailViewController: UIViewController {
             webView.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             webView.heightAnchor.constraint(equalToConstant: 250),
-            
-            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            activityIndicator.topAnchor.constraint(equalTo: view.topAnchor, constant: 16 + 125),
-            activityIndicator.heightAnchor.constraint(equalToConstant: 50),
-            activityIndicator.widthAnchor.constraint(equalToConstant: 50),
             
             labelsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             labelsStackView.topAnchor.constraint(equalTo: webView.bottomAnchor, constant: 16),
@@ -187,46 +201,30 @@ class MovieDetailViewController: UIViewController {
             saveButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.3),
             saveButton.heightAnchor.constraint(equalToConstant: 40)
         ])
+        blurView.frame = view.bounds
+        placeHolderImageView.frame = webView.frame
+        activityIndicator.center = placeHolderImageView.center
     }
     
-    private func sendYoutubeAPIRequest() {
-        activityIndicator.startAnimating()
-        NetworkManager.shared.send(request: SearchYoutubeContentRequest(query: movie.title)) { [weak self] result in
-            switch result {
-            case .success(let results):
-                print("SUCCESS: \(results.count)")
-                if !results.isEmpty {
-                    self?.videoID = results[0].id.videoId
-                    DispatchQueue.main.async {
-                        self?.showWebViewContent()
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        self?.showErrorAlert()
-                    }
-                }
-            case .failure(let error):
-                DispatchQueue.main.async {
-                    self?.showErrorAlert(error.localizedDescription)
-                }
-            }
+    private func setupViewModelCallBacks() {
+        viewModel.gotURLRequest = { [weak self] urlRequest in
+            self?.showWebViewContent(with: urlRequest)
+        }
+        
+        viewModel.failedToGetURLRequest = { [weak self] errorMessage in
+            self?.showAlert(title: "Error :(", message: errorMessage, dismissAction: { _ in
+                self?.activityIndicator.stopAnimating()
+                self?.placeHolderImageView.image = UIImage(named: "ytVideo")
+            })
         }
     }
     
-    private func showWebViewContent() {
-        guard let videoID = videoID, let url = URL(string: APIConstants.ytVideoBaseURL + videoID) else { return }
+    private func showWebViewContent(with urlRequest: URLRequest) {
         activityIndicator.stopAnimating()
-        print("--------VIDEO URL \(url)")
-        webView.load(URLRequest(url: url))
-    }
-    
-    private func showErrorAlert(_ errorMessage: String? = nil) {
-        activityIndicator.stopAnimating()
-        showAlert(title: "Error :(", message: "Title trailer is not available at the moment, try again later", dismissAction: { [weak self] _ in
-            self?.presentingViewController?.dismiss(animated: true)
-        })
+        placeHolderImageView.removeFromSuperview()
+        webView.load(urlRequest)
     }
     
     //MARK: - Deinit
-    deinit { print("DetailVC DEALLOCATED") }
+    deinit { print("DEALLOCATION: \(Self.self)")}
 }
