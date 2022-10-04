@@ -7,7 +7,7 @@
 
 import UIKit
 
-class CacheManager {
+final class CacheManager {
     static let shared = CacheManager()
     private init() {}
     
@@ -24,9 +24,5 @@ class CacheManager {
     public func cache(image: UIImage?, for path: String?) {
         guard let image = image, let path = path else { return }
         cache.setObject(image, forKey: NSString(string: path))
-    }
-    
-    public func restoreCache() {
-        cache.removeAllObjects()
     }
 }
