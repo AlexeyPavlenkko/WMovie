@@ -7,26 +7,17 @@
 
 import UIKit
 
-class FoundMovieTableViewCell: UITableViewCell {
+final class FoundMovieTableViewCell: UITableViewCell {
     static let identifier = "FoundMovieTableViewCell"
 
     //MARK: - Subviews
-    private let contentStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.axis = .horizontal
-        stackView.alignment = .fill
-        stackView.distribution = .fill
-        stackView.spacing = 5
-        return stackView
-    }()
-    
     private let posterImageView: UIImageView = {
         let imageV = UIImageView()
         imageV.translatesAutoresizingMaskIntoConstraints = false
         imageV.contentMode = .scaleAspectFill
         imageV.clipsToBounds = true
         imageV.layer.cornerRadius = 10
+        imageV.image = UIImage(named: "loadingPoster")
         imageV.setContentHuggingPriority(.required, for: .horizontal)
         return imageV
     }()
@@ -99,7 +90,8 @@ class FoundMovieTableViewCell: UITableViewCell {
     }
     
     override func prepareForReuse() {
-        posterImageView.image = nil
+        posterImageView.image = UIImage(named: "loadingPoster")
+        indexPath = nil
     }
     
     //MARK: - Private methods
@@ -131,21 +123,12 @@ class FoundMovieTableViewCell: UITableViewCell {
         
         titleLabel.text = movie.title
         let yearFormatted = formatter.string(from: movie.year)
-        if yearFormatted == "01.01.9999" {
-            releaseLabel.text = "Release date is unknown"
-        } else {
-            releaseLabel.text = "Release date: \(yearFormatted)"
-        }
+        releaseLabel.text = yearFormatted == "01.01.9999" ? "Release date is unknown" : "Release date: \(yearFormatted)"
         
         let overviewText = movie.overview ?? ""
-        if overviewText.isEmpty {
-            overviewLabel.text = "Overview is not available"
-        } else {
-            overviewLabel.text = "Overview: \(overviewText)"
-        }
+        overviewLabel.text = overviewText.isEmpty == true ? "Overview is not available" : "Overview: \(overviewText)"
         
         if let image = CacheManager.shared.getImage(for: movie.posterImage) {
-            print("Using cache")
             posterImageView.image = image
         } else {
             NetworkManager.shared.getImageDataFrom(path: movie.posterImage) { [weak self] data in

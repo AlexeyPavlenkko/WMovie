@@ -7,17 +7,19 @@
 
 import Foundation
 
-protocol SearchViewModelProtocol {
+protocol SearchViewModelProtocol: AnyObject {
     func getSeachScopeTitles() -> [String]
     func searchWithQuery(_ query: String, forScopeAtIndex index: Int)
     func getMovieForCell(at index: Int) -> Movie
     func getNumberOfRows() -> Int
+    func isMovieAlreadySavedCheck(_ movie: Movie) -> Bool
+    func toggleStorageStatusFor(_ movie: Movie) -> String
     var moviesFound: (() -> Void)? { get set }
     var noMoviesExist: (() -> Void)? { get set }
     var failedToFoundMovies: ((String) -> Void)? { get set }
 }
 
-class SearchViewModel: SearchViewModelProtocol {
+final class SearchViewModel: SearchViewModelProtocol {
     
     //MARK: - Private
     private enum SearchScope: String, CaseIterable {
@@ -98,4 +100,23 @@ class SearchViewModel: SearchViewModelProtocol {
     func getMovieForCell(at index: Int) -> Movie {
         return movies[index]
     }
+    
+    func toggleStorageStatusFor(_ movie: Movie) -> String {
+        let isAlreadySaved = isMovieAlreadySavedCheck(movie)
+        switch isAlreadySaved {
+        case false:
+            let isSaved = CoreDataManager.shared.saveMovie(movie)
+            return isSaved ? "📦 Saved!" : "⛔️ Could not be saved. Please try again later."
+        case true:
+            let isDeleted = CoreDataManager.shared.deleteMovie(movie)
+            return isDeleted ? "🗑 Deleted" : "⛔️ Could not be deleted. Please try again later."
+        }
+    }
+    
+    func isMovieAlreadySavedCheck(_ movie: Movie) -> Bool {
+        return CoreDataManager.shared.checkIfMovieIsSaved(movie)
+    }
+    
+    //MARK: - Deinit
+    deinit { print("DEALLOCATION: \(Self.self)")}
 }

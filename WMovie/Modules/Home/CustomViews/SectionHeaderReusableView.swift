@@ -7,7 +7,7 @@
 
 import UIKit
 
-class SectionHeaderReusableView: UICollectionReusableView {
+final class SectionHeaderReusableView: UICollectionReusableView {
     static let identifier = "SectionHeaderReusableView"
     static let kind = "header"
     

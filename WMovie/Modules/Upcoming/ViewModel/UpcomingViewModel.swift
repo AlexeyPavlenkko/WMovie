@@ -7,16 +7,17 @@
 
 import Foundation
 
-protocol UpcomingViewModelProtocol {
+protocol UpcomingViewModelProtocol: AnyObject {
     var moviesLoaded: (() -> Void)? { get set }
     var loadingFailed: ((String) -> Void)? { get set }
     func getNumberOfRows() -> Int
     func getMovieForCell(at index: Int) -> Movie
     func loadMoreMovies()
-    
+    func isMovieAlreadySavedCheck(_ movie: Movie) -> Bool
+    func toggleStorageStatusFor(_ movie: Movie) -> String
 }
 
-class UpcomingViewModel: UpcomingViewModelProtocol {
+final class UpcomingViewModel: UpcomingViewModelProtocol {
     
     //MARK: - Private
     private var upcomingMovies: [Movie] = []
@@ -51,4 +52,23 @@ class UpcomingViewModel: UpcomingViewModelProtocol {
     func getMovieForCell(at index: Int) -> Movie {
         return upcomingMovies[index]
     }
+    
+    func toggleStorageStatusFor(_ movie: Movie) -> String {
+        let isAlreadySaved = isMovieAlreadySavedCheck(movie)
+        switch isAlreadySaved {
+        case false:
+            let isSaved = CoreDataManager.shared.saveMovie(movie)
+            return isSaved ? "📦 Saved!" : "⛔️ Could not be saved. Please try again later."
+        case true:
+            let isDeleted = CoreDataManager.shared.deleteMovie(movie)
+            return isDeleted ? "🗑 Deleted" : "⛔️ Could not be deleted. Please try again later."
+        }
+    }
+    
+    func isMovieAlreadySavedCheck(_ movie: Movie) -> Bool {
+        return CoreDataManager.shared.checkIfMovieIsSaved(movie)
+    }
+    
+    //MARK: - Deinit
+    deinit { print("DEALLOCATION: \(Self.self)")}
 }

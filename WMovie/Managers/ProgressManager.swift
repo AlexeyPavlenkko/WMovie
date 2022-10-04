@@ -77,7 +77,7 @@ struct ProgressManager {
     }
     
     public func remove() {
-        progressView.activityIndicator.stopAnimating()
+        progressView?.activityIndicator.stopAnimating()
         progressView?.removeFromSuperview()
     }
 }

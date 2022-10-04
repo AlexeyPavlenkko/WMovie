@@ -47,6 +47,18 @@ struct Movie: Decodable, CustomStringConvertible {
         self.overview = nil
     }
     
+    init(_ movieEntity: MovieEntity) {
+        self.id = Int(movieEntity.id)
+        self.title = movieEntity.title
+        self.year = movieEntity.releaseDate
+        self.rate = movieEntity.rate
+        self.mediaType = nil
+        self.posterImage = movieEntity.posterImage
+        self.backdropImage = nil
+        self.voteCount = nil
+        self.overview = movieEntity.overview
+    }
+    
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(Int.self, forKey: .id)

@@ -19,25 +19,3 @@ struct YoutubeResult: Decodable, CustomStringConvertible {
         return "YoutubeResult(id(kind: \(id.kind), videoId: \(id.videoId)"
     }
 }
-
-/*
- {
-   "kind": "youtube#searchListResponse",
-   "etag": "DCV78Dg0u8HD9Js8guoRzx005r8",
-   "nextPageToken": "CAUQAA",
-   "regionCode": "UA",
-   "pageInfo": {
-     "totalResults": 1000000,
-     "resultsPerPage": 5
-   },
-   "items": [
-     {
-       "kind": "youtube#searchResult",
-       "etag": "N8qiJX-rznpbC1JGlcU4qeITJ2U",
-       "id": {
-         "kind": "youtube#video",
-         "videoId": "ZyppV2tfIAw"
-       }
-     },
-     {
- */

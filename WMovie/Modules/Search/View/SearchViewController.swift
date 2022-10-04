@@ -7,7 +7,7 @@
 
 import UIKit
 
-class SearchViewController: UIViewController {
+final class SearchViewController: UIViewController {
     
     //MARK: - Subviews
     private let tableView: UITableView = {
@@ -22,9 +22,21 @@ class SearchViewController: UIViewController {
     }()
     
     //MARK: - Variables
-    public var viewModel: SearchViewModelProtocol = SearchViewModel()
     private var progressManager = ProgressManager()
     private let searchController = UISearchController()
+    private let viewModel: SearchViewModelProtocol
+    weak private var builder: ModuleBuilderProtocol?
+    
+    //MARK: - Init
+    init(viewModel: SearchViewModelProtocol, builder: ModuleBuilderProtocol) {
+        self.viewModel = viewModel
+        self.builder = builder
+        super.init(nibName: nil, bundle: .main)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     //MARK: - Lifecycle
     override func viewDidLoad() {
@@ -48,7 +60,6 @@ class SearchViewController: UIViewController {
         navigationItem.searchController?.searchBar.placeholder = "Please enter movie's title"
         navigationController?.navigationBar.tintColor = .label
         searchController.obscuresBackgroundDuringPresentation = false
-        searchController.automaticallyShowsSearchResultsController = true
         searchController.searchBar.showsScopeBar = true
         searchController.searchBar.scopeButtonTitles = viewModel.getSeachScopeTitles()
         searchController.searchBar.delegate = self
@@ -84,6 +95,9 @@ class SearchViewController: UIViewController {
             self?.progressManager.remove()
         }
     }
+    
+    //MARK: - Deinit
+    deinit { print("DEALLOCATION: \(Self.self)")}
 }
 
 //MARK: - UITableViewDataSource & Delegate
@@ -106,7 +120,23 @@ extension SearchViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let movie = viewModel.getMovieForCell(at: indexPath.row)
-        self.showMovieDetailVC(with: movie)
+        guard let movieDetailVC = builder?.build(module: .movieDetail(movie: movie)) else { return }
+        present(movieDetailVC, animated: true)
+    }
+    
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        let movie = viewModel.getMovieForCell(at: indexPath.row)
+        let isSavedAlready = viewModel.isMovieAlreadySavedCheck(movie)
+        
+        let config = UIContextMenuConfiguration(actionProvider:  { _ in
+            let saveAction = UIAction(title: isSavedAlready ? "Delete" : "Save") { (action) in
+                let messageReturned = self.viewModel.toggleStorageStatusFor(movie)
+                self.showAlertWithAutoDismiss(message: messageReturned)
+                self.dismiss(animated: true)
+            }
+            return UIMenu(title: "", children: [saveAction])
+        })
+        return config
     }
 }
 

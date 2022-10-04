@@ -13,11 +13,13 @@ protocol HomeViewModelProtocol: AnyObject {
     func getNumberOfItemsForSection(at index: Int) -> Int
     func getHeaderTitleForSection(at index: Int) -> String
     func getMovieForCell(at indexPath: IndexPath) -> Movie
+    func isMovieAlreadySavedCheck(_ movie: Movie) -> Bool
+    func toggleStorageStatusFor(_ movie: Movie) -> String
     var allMoviesLoaded: (() -> Void)? { get set }
     var loadingFailed: ((String) -> Void)? { get set }
 }
 
-class HomeViewModel: HomeViewModelProtocol {
+final class HomeViewModel: HomeViewModelProtocol {
     
     //MARK: - Private
     private enum Sections: String, CaseIterable {
@@ -38,7 +40,9 @@ class HomeViewModel: HomeViewModelProtocol {
     private var popularTVs: [Movie] = []
     private var topRatedMovies: [Movie] = []
     private var topRatedTVs: [Movie] = []
+    private var mainHeaderMovie: Movie? = nil
     
+    private var isAllMoviesLoaded: Bool = false
     private var errorMessages = ""
     
     //MARK: - Public
@@ -46,14 +50,14 @@ class HomeViewModel: HomeViewModelProtocol {
     var loadingFailed: ((String) -> Void)?
     
     func viewDidLoaded() {
-        CacheManager.shared.restoreCache()
+        guard isAllMoviesLoaded == false else { return }
         
         dispatchGroup.enter()
         NetworkManager.shared.send(request: TrendingMoviesRequest()) { [weak self] result in
             switch result {
             case .success(let movies):
                 self?.trendingMovies = movies
-                print("-----trendingMovies GOT")
+                self?.mainHeaderMovie = movies.randomElement()
             case .failure(let error):
                 self?.errorMessages += "\(error.localizedDescription), "
             }
@@ -65,7 +69,6 @@ class HomeViewModel: HomeViewModelProtocol {
             switch result {
             case .success(let movies):
                 self?.trendingTVs = movies
-                print("-----trendingTVs GOT")
             case .failure(let error):
                 self?.errorMessages += "\(error.localizedDescription), "
             }
@@ -77,7 +80,6 @@ class HomeViewModel: HomeViewModelProtocol {
             switch result {
             case .success(let movies):
                 self?.popularMovies = movies
-                print("-----popularMovies GOT")
             case .failure(let error):
                 self?.errorMessages += "\(error.localizedDescription), "
             }
@@ -89,7 +91,6 @@ class HomeViewModel: HomeViewModelProtocol {
             switch result {
             case .success(let movies):
                 self?.popularTVs = movies
-                print("-----popularTVs GOT")
             case .failure(let error):
                 self?.errorMessages += "\(error.localizedDescription), "
             }
@@ -101,7 +102,6 @@ class HomeViewModel: HomeViewModelProtocol {
             switch result {
             case .success(let movies):
                 self?.topRatedMovies = movies
-                print("-----topRatedMovies GOT")
             case .failure(let error):
                 self?.errorMessages += "\(error.localizedDescription), "
             }
@@ -113,7 +113,6 @@ class HomeViewModel: HomeViewModelProtocol {
             switch result {
             case .success(let movies):
                 self?.topRatedTVs = movies
-                print("-----topRatedMovies GOT")
             case .failure(let error):
                 self?.errorMessages += "\(error.localizedDescription), "
             }
@@ -121,12 +120,12 @@ class HomeViewModel: HomeViewModelProtocol {
         }
         
         dispatchGroup.notify(queue: .main) { [weak self] in
-            print("NOTIFY CALLED")
             guard let self = self else {return}
             if self.errorMessages.isEmpty {
                 self.allMoviesLoaded?()
+                self.isAllMoviesLoaded = true
             } else {
-                self.loadingFailed?(self.errorMessages)
+                self.loadingFailed?("Failed to fetch info. Check your internet connection.")
             }
         }
         
@@ -156,7 +155,7 @@ class HomeViewModel: HomeViewModelProtocol {
     func getMovieForCell(at indexPath: IndexPath) -> Movie {
         let section = Sections.allCases[indexPath.section]
         switch section {
-        case .mainHeader:     return trendingMovies.isEmpty == false ? trendingMovies[0] : Movie()
+        case .mainHeader:     return mainHeaderMovie ?? Movie()
         case .trendingMovies: return trendingMovies[indexPath.row]
         case .trendingTV:     return trendingTVs[indexPath.row]
         case .popularMovies:  return popularMovies[indexPath.row]
@@ -165,4 +164,23 @@ class HomeViewModel: HomeViewModelProtocol {
         case .topRatedTVs:    return topRatedTVs[indexPath.row]
         }
     }
+    
+    func toggleStorageStatusFor(_ movie: Movie) -> String {
+        let isAlreadySaved = isMovieAlreadySavedCheck(movie)
+        switch isAlreadySaved {
+        case false:
+            let isSaved = CoreDataManager.shared.saveMovie(movie)
+            return isSaved ? "📦 Saved!" : "⛔️ Could not be saved. Please try again later."
+        case true:
+            let isDeleted = CoreDataManager.shared.deleteMovie(movie)
+            return isDeleted ? "🗑 Deleted" : "⛔️ Could not be deleted. Please try again later."
+        }
+    }
+    
+    func isMovieAlreadySavedCheck(_ movie: Movie) -> Bool {
+        return CoreDataManager.shared.checkIfMovieIsSaved(movie)
+    }
+    
+    //MARK: - Deinit
+    deinit { print("DEALLOCATION: \(Self.self)")}
 }

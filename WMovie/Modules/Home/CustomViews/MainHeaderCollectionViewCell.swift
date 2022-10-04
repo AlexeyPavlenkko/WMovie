@@ -12,7 +12,7 @@ protocol MainHeaderDelegate: AnyObject {
     func downloadButtonDidTapped(_ cell: MainHeaderCollectionViewCell)
 }
 
-class MainHeaderCollectionViewCell: UICollectionViewCell {
+final class MainHeaderCollectionViewCell: UICollectionViewCell {
     static let identifier = "MainHeaderCollectionViewCell"
     
     //MARK: - Subviews
@@ -60,7 +60,6 @@ class MainHeaderCollectionViewCell: UICollectionViewCell {
     //MARK: - Variables
     weak var delegate: MainHeaderDelegate?
     
-    
     //MARK: - Lifecycle
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -86,7 +85,6 @@ class MainHeaderCollectionViewCell: UICollectionViewCell {
     }
     
     //MARK: - @objc methods
-    
     @objc private func playButtonDidTapped() {
         delegate?.playButtonDidTapped(self)
     }
@@ -94,7 +92,6 @@ class MainHeaderCollectionViewCell: UICollectionViewCell {
     @objc private func downloadButtonDidTapped() {
         delegate?.downloadButtonDidTapped(self)
     }
-    
     
     //MARK: - Private methods
     private func addSubviews() {
@@ -124,14 +121,12 @@ class MainHeaderCollectionViewCell: UICollectionViewCell {
     }
     
     //MARK: - Public methods
-    
     public func setupMainHeader(with movie: Movie) {
         if let image = CacheManager.shared.getImage(for: movie.posterImage) {
             posterImageView.image = image
         } else {
             NetworkManager.shared.getImageDataFrom(path: movie.posterImage) { [weak self] data in
-                guard let data = data else { return }
-                let image = UIImage(data: data)
+                guard let data = data, let image = UIImage(data: data) else { return }
                 DispatchQueue.main.async {
                     self?.posterImageView.image = image
                     CacheManager.shared.cache(image: image, for: movie.posterImage)

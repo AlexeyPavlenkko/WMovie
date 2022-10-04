@@ -7,7 +7,7 @@
 
 import UIKit
 
-class MovieCollectionViewCell: UICollectionViewCell {
+final class MovieCollectionViewCell: UICollectionViewCell {
     static let identifier = "MovieCollectionViewCell"
     
     //MARK: - Subviews
@@ -15,7 +15,7 @@ class MovieCollectionViewCell: UICollectionViewCell {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.tintColor = .gray
+        imageView.image = UIImage(named: "loadingPoster")
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
@@ -41,7 +41,8 @@ class MovieCollectionViewCell: UICollectionViewCell {
     }
     
     override func prepareForReuse() {
-        posterImageView.image = nil
+        posterImageView.image = UIImage(named: "loadingPoster")
+        indexPath = nil
     }
     
     //MARK: - Private methods
@@ -65,8 +66,7 @@ class MovieCollectionViewCell: UICollectionViewCell {
             posterImageView.image = image
         } else {
             NetworkManager.shared.getImageDataFrom(path: movie.posterImage) { [weak self] data in
-                guard let data = data else { return }
-                let image = UIImage(data: data)
+                guard let data = data, let image = UIImage(data: data) else { return }
                 DispatchQueue.main.async {
                     CacheManager.shared.cache(image: image, for: movie.posterImage)
                     guard self?.indexPath == indexPath else { return }

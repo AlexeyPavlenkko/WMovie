@@ -7,7 +7,7 @@
 
 import UIKit
 
-class UpcomingMovieTableViewCell: UITableViewCell {
+final class UpcomingMovieTableViewCell: UITableViewCell {
     static let identifier = "UpcomingMovieTableViewCell"
     
     //MARK: - Subviews
@@ -27,7 +27,7 @@ class UpcomingMovieTableViewCell: UITableViewCell {
         imageV.contentMode = .scaleAspectFill
         imageV.clipsToBounds = true
         imageV.layer.cornerRadius = 10
-        imageV.tintColor = .gray
+        imageV.image = UIImage(named: "loadingPoster")
         imageV.setContentHuggingPriority(.required, for: .horizontal)
         return imageV
     }()
@@ -100,7 +100,8 @@ class UpcomingMovieTableViewCell: UITableViewCell {
     }
     
     override func prepareForReuse() {
-        posterImageView.image = nil
+        posterImageView.image = UIImage(named: "loadingPoster")
+        indexPath = nil
     }
     
     //MARK: - Private methods
@@ -133,12 +134,9 @@ class UpcomingMovieTableViewCell: UITableViewCell {
         titleLabel.text = movie.title
         let yearFormatted = formatter.string(from: movie.year)
         releaseLabel.text = "Release date: \(yearFormatted)"
+        
         let overviewText = movie.overview ?? ""
-        if overviewText.isEmpty {
-            overviewLabel.text = "Overview is not available"
-        } else {
-            overviewLabel.text = "Overview: \(overviewText)"
-        }
+        overviewLabel.text = overviewText.isEmpty ? "Overview is not available" : "Overview: \(overviewText)"
         
         if let image = CacheManager.shared.getImage(for: movie.posterImage) {
             posterImageView.image = image
@@ -152,10 +150,9 @@ class UpcomingMovieTableViewCell: UITableViewCell {
                     CacheManager.shared.cache(image: image, for: movie.posterImage)
                     guard self?.indexPath == indexPath else { return }
                     self?.posterImageView.image = image
-                    
                 }
             }
         }
     }
-
+    
 }

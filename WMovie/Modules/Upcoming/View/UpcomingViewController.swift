@@ -7,7 +7,7 @@
 
 import UIKit
 
-class UpcomingViewController: UIViewController {
+final class UpcomingViewController: UIViewController {
     
     //MARK: - Subviews
     private let tableView: UITableView = {
@@ -19,18 +19,38 @@ class UpcomingViewController: UIViewController {
     }()
     
     //MARK: - Variables
-    public var viewModel: UpcomingViewModelProtocol = UpcomingViewModel()
     private var progressManager = ProgressManager()
+    public let viewModel: UpcomingViewModelProtocol
+    weak private var builder: ModuleBuilderProtocol?
+    
+    //MARK: - Init
+    init(viewModel: UpcomingViewModelProtocol, builder: ModuleBuilderProtocol) {
+        self.viewModel = viewModel
+        self.builder = builder
+        super.init(nibName: nil, bundle: .main)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     //MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        navigationItem.title = "Upcoming Movies"
         view.backgroundColor = .systemBackground
+        setupNavBar()
         setupTableView()
         setupViewModelCallBacks()
         progressManager.show(on: self)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        if viewModel.getNumberOfRows() == 0 {
+            viewModel.loadMoreMovies()
+        }
     }
     
     override func viewDidLayoutSubviews() {
@@ -39,6 +59,11 @@ class UpcomingViewController: UIViewController {
     }
     
     //MARK: - Private methods
+    private func setupNavBar() {
+        navigationItem.title = "Upcoming Movies"
+        navigationController?.navigationBar.prefersLargeTitles = true
+    }
+    
     private func setupTableView() {
         view.addSubview(tableView)
         tableView.register(UpcomingMovieTableViewCell.self, forCellReuseIdentifier: UpcomingMovieTableViewCell.identifier)
@@ -60,6 +85,9 @@ class UpcomingViewController: UIViewController {
             footer.removeIndicator()
         }
     }
+    
+    //MARK: - Deinit
+    deinit { print("DEALLOCATION: \(Self.self)")}
 }
 
 //MARK: - CollectionDataSource & Delegate
@@ -82,8 +110,8 @@ extension UpcomingViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let movie = viewModel.getMovieForCell(at: indexPath.row)
-        print(movie)
-        self.showMovieDetailVC(with: movie)
+        guard let movieDetailVC = builder?.build(module: .movieDetail(movie: movie)) else { return }
+        present(movieDetailVC, animated: true)
     }
     
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
@@ -99,5 +127,19 @@ extension UpcomingViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         return CGFloat(50)
+    }
+    
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        let movie = viewModel.getMovieForCell(at: indexPath.row)
+        let isSavedAlready = viewModel.isMovieAlreadySavedCheck(movie)
+        
+        let config = UIContextMenuConfiguration(actionProvider:  { _ in
+            let saveAction = UIAction(title: isSavedAlready ? "Delete" : "Save") { (action) in
+                let messageReturned = self.viewModel.toggleStorageStatusFor(movie)
+                self.showAlertWithAutoDismiss(message: messageReturned)
+            }
+            return UIMenu(title: "", children: [saveAction])
+        })
+        return config
     }
 }

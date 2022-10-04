@@ -8,9 +8,9 @@
 import Foundation
 
 //MARK: - Custom Errors
-enum NetworkManagerError: LocalizedError {
+fileprivate enum NetworkManagerError: LocalizedError {
     case urlNotValid
-    case responseNotValid
+    case responseNotValid(statusCodeNumber: Int, message: String)
     case noDataFromResponse
     case couldNotDecode
     case unknownError
@@ -19,8 +19,8 @@ enum NetworkManagerError: LocalizedError {
         switch self {
         case .urlNotValid:
             return "Provided url is not valid"
-        case .responseNotValid:
-            return "Response from server is not valid"
+        case .responseNotValid(let statusCode, let message):
+            return "Error \(statusCode): \(message)"
         case .couldNotDecode:
             return "Could not decode objects from data provided by response"
         case .noDataFromResponse:
@@ -32,7 +32,7 @@ enum NetworkManagerError: LocalizedError {
 }
 
 //MARK: - NetworkManager
-class NetworkManager {
+final class NetworkManager {
     static let shared = NetworkManager()
     private init() {}
     
@@ -46,12 +46,17 @@ class NetworkManager {
         
         let dataTask = URLSession.shared.dataTask(with: url) { data, response, error in
             guard error == nil else {
-                completion(.failure(NetworkManagerError.unknownError))
+                completion(.failure(error!))
                 return
             }
             
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                completion(.failure(NetworkManagerError.responseNotValid))
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(NetworkManagerError.responseNotValid(statusCodeNumber: 999, message: "Response is not http.")))
+                return
+            }
+            
+            guard httpResponse.responseType == .success else {
+                completion(.failure(NetworkManagerError.responseNotValid(statusCodeNumber: httpResponse.statusCode, message: httpResponse.status.message)))
                 return
             }
             

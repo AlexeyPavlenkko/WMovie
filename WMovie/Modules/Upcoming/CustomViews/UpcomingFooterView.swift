@@ -7,7 +7,7 @@
 
 import UIKit
 
-class UpcomingFooterView: UITableViewHeaderFooterView {
+final class UpcomingFooterView: UITableViewHeaderFooterView {
     static let identifier = "UpcomingFooterView"
     
     private let activityIndicator: UIActivityIndicatorView = {
