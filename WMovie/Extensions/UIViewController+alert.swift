@@ -14,5 +14,12 @@ extension UIViewController {
         alertController.addAction(okAction)
         self.present(alertController, animated: true)
     }
+    
+    func showAlertWithAutoDismiss(title: String? = nil, message: String) {
+        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        self.present(alertController, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            self.dismiss(animated: true)
+        }
+    }
 }
-
