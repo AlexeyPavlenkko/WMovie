@@ -70,5 +70,5 @@ final class AppModuleBuilder: ModuleBuilderProtocol {
     }
     
     //MARK: - Deinit
-    // deinit { print("DEALLOCATION: \(Self.self)")}
+    deinit { print("DEALLOCATION: \(Self.self)")}
 }
